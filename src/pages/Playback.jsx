@@ -3,11 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 // have database folder for videos
 export default function Playback() {
     const [PlayButtonText, setPlayButtonText] = useState('Play');
-    // const [Start, setStart] = useState(0);
-    // const [End, setEnd] = useState(5);
-    // const [Looping, setLooping] = useState(false);
     const [VideoTime, setVideoTime] = useState(0);
-
     const [rate, setRate] = useState(1);
     const [isMirrored, setIsMirrored] = useState(false);
     const [isCountingDown, setIsCountingDown] = useState(false);
@@ -42,14 +38,10 @@ export default function Playback() {
     // update button text when video controls are used
     // add event listener for looping
     useEffect(() => {
-        // const handlePlay = () => {
-        //     setButtonText("Pause");
-        // };
-        // const handlePause = () => {
-        //     setButtonText("Play");
-        // };
         const handleLoaded = () => {
-            videoRef.current.PlaybackRate = rate;
+            if (videoRef.current) {
+                videoRef.current.playbackRate = rate; // Fixed: lowercase 'p'
+            }
         }
 
         // Add event listener to the referenced element
@@ -73,7 +65,7 @@ export default function Playback() {
             videoRef.current.addEventListener('pause', updatePlayText);
             videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
             videoRef.current.addEventListener('loadedmetadata', handleLoaded);
-            videoRef.current.PlaybackRate = rate;
+            videoRef.current.playbackRate = rate; // Fixed: lowercase 'p'
         }
 
         // Clean up the event listener when the component unmounts
@@ -86,11 +78,12 @@ export default function Playback() {
                 videoRef.current.removeEventListener('loadedmetadata', handleLoaded);
             }
         };
-    }, [VideoTime, EndRef, StartRef, LoopRef]);
+    }, [rate]); // Added rate as dependency
 
+    // Fixed: Update playback rate when rate changes
     useEffect(() => {
         if (videoRef.current) {
-            videoRef.current.Playback = rate;
+            videoRef.current.playbackRate = rate; // Fixed: lowercase 'p' and correct property name
         }
     }, [rate]);
 
@@ -98,8 +91,8 @@ export default function Playback() {
     const toggleStart = () => {
         StartRef.current = videoRef.current.currentTime;
     }
+    
     const toggleEnd = () => {
-        // setEnd(videoRef.current.currentTime);
         EndRef.current = videoRef.current.currentTime;
     };
 
@@ -117,47 +110,208 @@ export default function Playback() {
             await new Promise(res => setTimeout(res, 1000));
         }
         setIsCountingDown(false);
-        try { await videoRef.current.play(); }
-        catch { setError('Autoplay blocked. Tap play'); }
+        try { 
+            await videoRef.current.play(); 
+        }
+        catch { 
+            setError('Autoplay blocked. Tap play'); 
+        }
     };
 
     return (
-        <div>
-            <h1 className="text-3xl font-bold">Playback</h1>
-            <div className="flex items-center gap-2 my-2">
-                <label className="text-sm">Speed</label>
-                <select className="border rounded px-2 py-1 text-sm" value={rate} onChange={(e) => setRate(parseFloat(e.target.value))}>
+        <div style={{ padding: '20px' }}>
+            <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '20px' }}>Playback</h1>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <label style={{ fontSize: '14px' }}>Speed</label>
+                <select 
+                    style={{ 
+                        border: '1px solid #ccc', 
+                        borderRadius: '4px', 
+                        padding: '4px 8px', 
+                        fontSize: '14px' 
+                    }} 
+                    value={rate} 
+                    onChange={(e) => setRate(parseFloat(e.target.value))}
+                >
                     {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 2].map(r => (
                         <option key={r} value={r}>{r}x</option>
                     ))}
                 </select>
 
-                <button type="button" onClick={() => setIsMirrored(s => !s)} className="bg-gray-100 hover:bg-gray-200 text-black font-semibold py-1 px-3 rounded"> {isMirrored ? 'Unmirror' : 'Mirror'} </button>
-                <button type="button" onClick={countDown} className="bg-slate-100 hover:bg-slate-200 text-black font-semibold py-2 px-3 rounded"> Start (3-2-1) </button>
-
+                <button 
+                    type="button" 
+                    onClick={() => setIsMirrored(s => !s)} 
+                    style={{
+                        backgroundColor: '#f3f4f6',
+                        border: 'none',
+                        padding: '6px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: '600'
+                    }}
+                > 
+                    {isMirrored ? 'Unmirror' : 'Mirror'} 
+                </button>
+                
+                <button 
+                    type="button" 
+                    onClick={countDown} 
+                    style={{
+                        backgroundColor: '#f1f5f9',
+                        border: 'none',
+                        padding: '8px 12px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: '600'
+                    }}
+                > 
+                    Start (3-2-1) 
+                </button>
             </div>
 
-            <video ref={videoRef} src="src/assets/katseye.mp4" width="200px" id="playbackvid" style={{ transform: isMirrored ? 'scaleX(-1)' : 'scaleX(1)' }} controls>video here</video>
-            <button type="submit" value="submit" id="playpause" onClick={togglePlay} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">{PlayButtonText}</button>
-            <button type="submit" value="submit" id="togglestart" onClick={toggleStart} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add start</button>
-            <button type="submit" value="submit" id="toggleend" onClick={toggleEnd} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Add end</button>
-            <button type="submit" value="submit" id="toggleloop" onClick={toggleLoop} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Toggle Loop</button>
+            <div style={{ marginBottom: '20px' }}>
+                <video 
+                    ref={videoRef} 
+                    src="src/assets/katseye.mp4" 
+                    width="400px" 
+                    style={{ 
+                        transform: isMirrored ? 'scaleX(-1)' : 'scaleX(1)',
+                        marginBottom: '10px',
+                        display: 'block'
+                    }} 
+                    controls
+                >
+                    Video not supported
+                </video>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                <button 
+                    onClick={togglePlay} 
+                    style={{
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {PlayButtonText}
+                </button>
+                
+                <button 
+                    onClick={toggleStart} 
+                    style={{
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Add Start
+                </button>
+                
+                <button 
+                    onClick={toggleEnd} 
+                    style={{
+                        backgroundColor: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Add End
+                </button>
+                
+                <button 
+                    onClick={toggleLoop} 
+                    style={{
+                        backgroundColor: LoopRef.current ? '#10b981' : '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    {LoopRef.current ? 'Loop ON' : 'Loop OFF'}
+                </button>
+            </div>
+
             {isCountingDown && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                    <div className="text-white text-5xl font-bold">{count}</div>
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    zIndex: 1000
+                }}>
+                    <div style={{ 
+                        color: 'white', 
+                        fontSize: '4rem', 
+                        fontWeight: 'bold' 
+                    }}>
+                        {count}
+                    </div>
                 </div>
             )}
-            {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
-            <p>variable src video file? need to make some way for users to upload :/</p>
+            
+            {error && (
+                <p style={{ 
+                    fontSize: '14px', 
+                    color: '#dc2626', 
+                    marginTop: '8px' 
+                }}>
+                    {error}
+                </p>
+            )}
 
-            <h2 className="text-2xl mb-4 mt-6">Status of video playback!</h2>
-            <p>Start of Video: {StartRef.current}</p>
-            <p>End of Video: {EndRef.current}</p>
-            <p>Looping?: {LoopRef.current ? "yes" : "no"}</p>
-            <p>Current Time: {VideoTime}</p>
+            <div style={{ 
+                backgroundColor: '#f9fafb', 
+                padding: '16px', 
+                borderRadius: '8px', 
+                marginTop: '20px' 
+            }}>
+                <h2 style={{ 
+                    fontSize: '1.5rem', 
+                    marginBottom: '16px', 
+                    fontWeight: 'bold' 
+                }}>
+                    Video Status
+                </h2>
+                <p><strong>Current Speed:</strong> {rate}x</p>
+                <p><strong>Start Point:</strong> {StartRef.current.toFixed(2)}s</p>
+                <p><strong>End Point:</strong> {EndRef.current === -1 ? 'Not set' : `${EndRef.current.toFixed(2)}s`}</p>
+                <p><strong>Looping:</strong> {LoopRef.current ? "Yes" : "No"}</p>
+                <p><strong>Current Time:</strong> {VideoTime.toFixed(2)}s</p>
+                <p><strong>Mirrored:</strong> {isMirrored ? "Yes" : "No"}</p>
+            </div>
 
-            <p className="mt-5">todo: get countdown to play from StartRef?</p>
-            <p>todo: toggle countdown instead?</p>
+            <div style={{ 
+                marginTop: '20px', 
+                padding: '12px', 
+                backgroundColor: '#fef3c7', 
+                borderRadius: '6px' 
+            }}>
+                <p><strong>Todo:</strong> Get countdown to play from StartRef</p>
+                <p><strong>Todo:</strong> Toggle countdown instead</p>
+                <p><strong>Note:</strong> Variable src video file - need way for users to upload</p>
+            </div>
         </div>
     );
 }
